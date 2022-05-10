@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+
+{% block breadcrumb %}
+
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+          integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    <img src="{{ list.poster.url }}" height="200" width="100%" alt="">
+    <head class="breadcrumb-item active">Created by:
+        {% for creator in creators.all %}
+            <a href="{% url 'userprofile' creator.pk %}">{{ creator.username }}</a>
+            <br>
+        {% endfor %}
+    </head>
+    <br>
+    <head class="breadcrumb-item active">Name: {{ list.title }}</head>
+    <br>
+    <head class="breadcrumb-item active">Description: {{ list.description }}</head>
+<div class="container">
+<table class="table">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Song name</th>
+            <th>Artist</th>
+            <th>Genre</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for song in songs %}
+            <tr>
+              <td class="align-middle">{{ song.name }}</td>
+              <td class="align-middle"><a style="color: red;" href="{% url 'artistinfo' song.artist.pk %}">{{ song.artist.name }}</a>
+              </td>
+              <td class="align-middle">{{ song.genre }}</td>
+                <td>
+                    {% if list.editable and user in list.creators.all %}
+                    <form action="{% url 'removesong' list.pk %}" method="POST" class="remove-form" id="{{ list.pk }}">
+                        {% csrf_token %}
+                        <button style="border:1px solid black; background-color: transparent; color: red;" type="submit" name="remove_btn" value="{{ song.id }}" class="btn-outline-primary">
+                            Remove Song
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{% url 'like_unlike' %}" method="POST" class="like-form"  id="{{ list.pk }}" >
+                        {% csrf_token %}
+                        <input type="hidden" name="like_btn" value="{{song.id}}">
+                            {% if song not in likedList.songs.all %}
+                                <button name ="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart-empty" type="submit"></button>
+                            {% else %}
+                                <button name="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart" type="submit"></button>
+                            {% endif %}
+                    </form>
+                    <div class="ui grid">
+                        <div class="column">
+                            <div class="like-count{{song.id}}"> {{song.likeNumber}} </div>
+                        </div>
+                        <div class="column">
+                            likes
+                        </div>
+                    </div>
+                </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    <!--{% if request.user in list.creators.all %}
+        <table class="table">
+                <thead class="thead-inverse">
+                <tr>
+                    <th>Recommended Songs</th>
+                    <th>Artist</th>
+                    <th>Genre</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for song in recommendations %}
+                        <tr>
+                            <td class="align-middle">{{ song.title }}</td>
+                            <td>
+                                <a href="{% url 'artistinfo' song.artist.pk %}">{{ song.artist.name }}</a>
+                            </td>
+                            <td class="align-middle">{{ song.genre }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+    {% endif %}-->
+
+    {% if songs.has_other_pages %}
+  <ul class="pagination" >
+    {% if songs.has_previous %}
+      <li><a style="background-color: transparent; color: red; border-color: transparent;"
+             href="?page={{ songs.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span style="background-color: transparent; color: red; border-color: transparent;"
+      >&laquo;</span></li>
+    {% endif %}
+    {% for i in songs.paginator.page_range %}
+      {% if songs.number == i %}
+        <li class="active"><span style="background-color: transparent; color: white; border-color: transparent;"
+        >{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a style="background-color: transparent; color: red; border-color: transparent;"
+               href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if songs.has_next %}
+      <li><a style="background-color: transparent; color: red; border-color: transparent;"
+             href="?page={{ songs.next_page_number }}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span style="background-color: transparent; color: red; border-color: transparent;"
+      >&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+            $(".like-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const song_id = self.find('input[name=like_btn]').attr('value')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                let res;
+                const likes = $(`.like-count${song_id}`).text()
+                const trimCount = parseInt(likes)
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'song_id':song_id,
+                    },
+                    success: function(response) {
+                        if (button.hasClass("glyphicon-heart-empty")){
+                            button.removeClass("glyphicon-heart-empty").addClass("glyphicon-heart");
+                            res = trimCount + 1
+                        }
+                        else if (button.hasClass("glyphicon-heart")){
+                            button.removeClass("glyphicon-heart").addClass("glyphicon-heart-empty");
+                            res = trimCount - 1
+                        }
+
+                        $(`.like-count${song_id}`).text(res)
+                    },
+                    error: function (response){
+                    },
+                });
+            });
+
+    </script>
+{% endblock %}
+
+

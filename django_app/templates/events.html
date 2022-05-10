@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}User: {{ user.username }}{% endblock %}
+
+{% block breadcrumb %}
+
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+          integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<table class="table">
+        <tbody>
+          {% for event in events %}
+            <tr>
+                <td class="align-middle"><strong style="font-size: x-large;"><a href="{% url 'eventinfo' event.pk %}">
+                    {{ event.title }}</a></strong>
+                  <br>{{ event.description }}
+              </td>
+                <td class="align-middle">{{ event.date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% if is_paginated %}
+  <ul class="pagination" >
+    {% if page_obj.has_previous %}
+      <li><a style="background-color: transparent; color: red; border-color: transparent;"
+             href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span style="background-color: transparent; color: red; border-color: transparent;"
+      >&laquo;</span></li>
+    {% endif %}
+    {% for i in paginator.page_range %}
+      {% if page_obj.number == i %}
+        <li class="active"><span style="background-color: transparent; color: white; border-color: transparent;"
+        >{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a style="background-color: transparent; color: red; border-color: transparent;"
+               href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a style="background-color: transparent; color: red; border-color: transparent;"
+             href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span style="background-color: transparent; color: red; border-color: transparent;"
+      >&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+
+    </div>
+{% endblock %}
+
+

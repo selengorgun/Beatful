@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}HomePage{% endblock %}
+
+{% block content %}
+{% endblock %}
+
+{% block section %}
+    <!-- gallery section -->
+<section id="gallery" class="gallery section">
+  <div class="container-fluid">
+    <div class="section-header">
+                <h2 class="wow fadeInDown animated">Playlists</h2>
+                <p class="wow fadeInDown animated">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent eget risus vitae massa <br> semper aliquam quis mattis quam.</p>
+            </div>
+
+    <div class="row no-gutter">
+        {% for list in lists %}
+        <div class="col-lg-3 col-md-6 col-sm-6 work">
+            <a href="{% url 'playlistinfo' list.pk %}" class="work-box"><img src="{{ list.poster.url }}"  alt="">
+                <div class="overlay">
+                  <div class="overlay-caption">
+                      <p>{{ list.title }}</p>
+                  </div>
+                </div>
+        <!-- overlay -->
+        </a> </div>
+        {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="top_list" class="top section">
+  <div class="container-fluid">
+    <div class="section-header">
+        <h2 class="wow fadeInDown animated">TOP 50 SONGS</h2>
+        <p class="wow fadeInDown animated">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Praesent eget risus vitae massa <br> semper aliquam quis mattis quam.</p>
+    </div>
+        <div class="container">
+      <table class="table">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Name</th>
+            <th>Genre</th>
+            <th>Artist</th>
+            <th>Like Number</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for song in songs %}
+            <tr>
+              <td class="align-middle">{{ song.name }}</td>
+              <td class="align-middle">{{ song.genre }}</td>
+              <td class="align-middle"><a style="color: red;" href="{% url 'artistinfo' song.artist.pk %}">{{ song.artist }}</a>
+              </td>
+              <td class="align-middle">
+                  <form action="{% url 'like_unlike' %}" method="POST" class="like-form"  id="{{ song.pk }}" >
+                        {% csrf_token %}
+                        <input type="hidden" name="like_btn" value="{{song.id}}">
+                            {% if song not in liked_list.songs.all %}
+                                <button name ="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart-empty" type="submit"></button>
+                            {% else %}
+                                <button name="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart" type="submit"></button>
+                            {% endif %}
+                    </form>
+                    <div class="ui grid">
+                        <div class="column">
+                            <div class="like-count{{song.id}}"> {{song.likeNumber}} </div>
+                        </div>
+                        <div class="column">
+                            likes
+                        </div>
+                    </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block script %}
+    <script>
+        $(document).ready(function (){
+            $(".like-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const song_id = self.find('input[name=like_btn]').attr('value')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                let res;
+                const likes = $(`.like-count${song_id}`).text()
+                const trimCount = parseInt(likes)
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'song_id':song_id,
+                    },
+                    success: function(response) {
+                        if (button.hasClass("glyphicon-heart-empty")){
+                            button.removeClass("glyphicon-heart-empty").addClass("glyphicon-heart");
+                            res = trimCount + 1
+                        }
+                        else if (button.hasClass("glyphicon-heart")){
+                            button.removeClass("glyphicon-heart").addClass("glyphicon-heart-empty");
+                            res = trimCount - 1
+                        }
+
+                        $(`.like-count${song_id}`).text(res)
+                    },
+                    error: function (response){
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock %}
+

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+
+{% block content %}
+    <div class="container">
+        <strong style="font-size: x-large;">Did you mean?</strong>
+        {% if searched %}
+            <table class="table">
+                <thead class="thead-inverse">
+                <tr>
+                    <th>Artists</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for artist in artists %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'artistinfo' artist.pk %}">{{ artist.name }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <table class="table">
+                <thead class="thead-inverse">
+                <tr>
+                    <th>Users</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for person in users %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'userprofile' person.pk %}">{{ person.username }}</a>
+                            </td>
+                            <td>
+                                <form action="{% url 'subscribe' %}" method="POST" class="subscribe-form"  id="{{ person.pk }}" >
+                                {% csrf_token %}
+                                <input type="hidden" name="like_btn" value="{{song.id}}">
+                            {% if person not in user.profile.subscriptions.all %}
+                                <button name ="sub_btn" style="border:transparent; background-color: transparent; color: red;"
+                                        type="submit">Subscribe</button>
+                            {% else %}
+                                <button name="sub_btn" style="border:transparent; background-color: transparent; color: red;" type="submit">Unsubscribe</button>
+                            {% endif %}
+                            </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <table class="table">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Songs</th>
+            <th>Artist</th>
+            <th>Genre</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for song in songs %}
+            <tr>
+              <td class="align-middle">{{ song.name }}</td>
+              <td class="align-middle"><a style="color: red;" href="{% url 'artistinfo' song.artist.pk %}">{{ song.artist.name }}</a>
+              </td>
+              <td class="align-middle">{{ song.genre }}</td>
+                <td>
+                    <form action="{% url 'like_unlike' %}" method="POST" class="like-form"  id="{{ song.pk }}" >
+                        {% csrf_token %}
+                        <input type="hidden" name="like_btn" value="{{song.id}}">
+                            {% if song not in user.liked.all %}
+                                <button name ="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart-empty" type="submit"></button>
+                            {% else %}
+                                <button name="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart" type="submit"></button>
+                            {% endif %}
+                    </form>
+                    <div class="ui grid">
+                        <div class="column">
+                            <div class="like-count{{song.id}}"> {{song.likeNumber}} </div>
+                        </div>
+                        <div class="column">
+                            likes
+                        </div>
+                    </div>
+                </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+            <table class="table">
+                <thead class="thead-inverse">
+                <tr>
+                    <th>News</th>
+                    <th>Author</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for new in news %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'articleinfo' new.pk %}">{{ new.title }}</a>
+                            </td>
+                            <td class="align-middle">{{ new.author }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table class="table">
+                <thead class="thead-inverse">
+                <tr>
+                    <th>Events</th>
+                    <th>Date</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'eventinfo' event.pk %}">{{ event.title }}</a>
+                            </td>
+                            <td class="align-middle">{{ event.date }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+{% endblock %}
+
+
+{% block script %}
+    <script>
+        $(document).ready(function (){
+            $(".subscribe-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const profile_id = self.attr('id')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'profile_id':profile_id,
+                    },
+                    success: function(response) {
+                        if (button.text() === "Subscribe"){
+                            button.text("Unsubscribe");
+                        }
+                        else if (button.text() === "Unsubscribe"){
+                            button.text("Subscribe");
+                        }
+                    },
+                    error: function (response){
+                        console.log("AAAAAAAAAAA")
+                    },
+                });
+            });
+
+            $(".like-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const song_id = self.find('input[name=like_btn]').attr('value')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                let res;
+                const likes = $(`.like-count${song_id}`).text()
+                const trimCount = parseInt(likes)
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'song_id':song_id,
+                    },
+                    success: function(response) {
+                        if (button.hasClass("glyphicon-heart-empty")){
+                            button.removeClass("glyphicon-heart-empty").addClass("glyphicon-heart");
+                            res = trimCount + 1
+                        }
+                        else if (button.hasClass("glyphicon-heart")){
+                            button.removeClass("glyphicon-heart").addClass("glyphicon-heart-empty");
+                            res = trimCount - 1
+                        }
+
+                        $(`.like-count${song_id}`).text(res)
+                    },
+                    error: function (response){
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock %}

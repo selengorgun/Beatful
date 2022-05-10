@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Add comment{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Lists</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'userprofile' user.pk %}">User Profile</a></li>
+{% endblock %}
+
+{% block stylesheet %}
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+  <form method="POST" id="id_form">
+    {% csrf_token %}
+  {% include 'includes/form.html' %}
+
+    <button type="submit" class="btn btn-success">Add</button>
+    </form>
+{% endblock %}

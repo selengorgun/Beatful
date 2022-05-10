@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Add Contributor{% endblock %}
+
+{% block stylesheet %}
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+  <form method="POST" id="id_form">
+    {% csrf_token %}
+  {% include 'includes/form.html' %}
+
+    <button type="submit" class="btn btn-success">Add</button>
+    </form>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script>
+      $(document).ready(function() {
+        $("#id_creators").select2();
+      });
+    </script>
+{% endblock %}

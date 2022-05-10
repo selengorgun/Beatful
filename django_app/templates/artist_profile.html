@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Artist: {{ artist.name }}{% endblock %}
+
+{% block breadcrumb %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+    <head class="breadcrumb-item active">Artist: {{ artist.name }}</head>
+<table class="table">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Song name</th>
+            <th>Genre</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for song in songs %}
+            <tr>
+              <td class="align-middle">{{ song.name }}</td>
+              <td class="align-middle">{{ song.genre }}</td>
+                <td>
+                <form action="{% url 'like_unlike' %}" method="POST" class="like-form"  id="{{ artist.pk }}" >
+                        {% csrf_token %}
+                        <input type="hidden" name="like_btn" value="{{song.id}}">
+                            {% if song not in liked_list.songs.all %}
+                                <button name ="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart-empty" type="submit"></button>
+                            {% else %}
+                                <button name="btn" style="border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-heart" type="submit"></button>
+                            {% endif %}
+                    </form>
+                    <div class="ui grid">
+                        <div class="column">
+                            <div class="like-count{{song.id}}"> {{song.likeNumber}} </div>
+                        </div>
+                        <div class="column">
+                            likes
+                        </div>
+                    </div>
+                </td>
+            </tr>
+          {% endfor %}
+        <td>
+                    <form action="{% url 'block_unblock' %}" method="POST" class="block-form"  id="{{ artist.pk }}" >
+                        {% csrf_token %}
+                        <input type="hidden" name="block_btn" value="{{artist.id}}">
+                            {% if artist not in request.user.blocked_artists.all %}
+                                <button name ="btn" style="font-size: larger; border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-thumbs-down" type="submit">Block</button>
+                            {% else %}
+                                <button name="btn" style="font-size: larger; border:transparent; background-color: transparent; color: red;"
+                                        class="glyphicon glyphicon-thumbs-up" type="submit">Unblock</button>
+                            {% endif %}
+                    </form>
+                </td>
+        </tbody>
+      </table>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        $(document).ready(function (){
+            $(".block-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const artist_id = self.find('input[name=block_btn]').attr('value')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'artist_id':artist_id,
+                    },
+                    success: function(response) {
+                        console.log("hey")
+                        if (button.hasClass("glyphicon-thumbs-down")){
+                            button.removeClass("glyphicon-thumbs-down").addClass("glyphicon-thumbs-up");
+                            button.text("Unblock")
+                        }
+                        else if (button.hasClass("glyphicon-thumbs-up")){
+                            button.removeClass("glyphicon-thumbs-up").addClass("glyphicon-thumbs-down");
+                            button.text("Block")
+                        }
+
+                    },
+                    error: function (response){
+                        console.log("hi")
+                    },
+                });
+            });
+
+            $(".like-form").submit(function (e){
+                e.preventDefault();
+                let self = $(this)
+                const song_id = self.find('input[name=like_btn]').attr('value')
+                const url = self.attr('action')
+                const button = self.find('button[type=submit]')
+
+                let res;
+                const likes = $(`.like-count${song_id}`).text()
+                const trimCount = parseInt(likes)
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'song_id':song_id,
+                    },
+                    success: function(response) {
+                        console.log("hey")
+                        if (button.hasClass("glyphicon-heart-empty")){
+                            button.removeClass("glyphicon-heart-empty").addClass("glyphicon-heart");
+                            res = trimCount + 1
+                        }
+                        else if (button.hasClass("glyphicon-heart")){
+                            button.removeClass("glyphicon-heart").addClass("glyphicon-heart-empty");
+                            res = trimCount - 1
+                        }
+
+                        $(`.like-count${song_id}`).text(res)
+                    },
+                    error: function (response){
+                        console.log("hi")
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock %}
